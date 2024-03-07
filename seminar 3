@@ -1,0 +1,206 @@
+--1. Într-un bloc PL/SQL să se modifice salariul angajatului citit de la tastatură în funcție de numărul de comenzi pe care acesta le-a intermediat. Urmați pașii:
+-- inițial, se vor afișa numele și salariul angajatului citit de la tastatură
+-- se va calcula și se va afișa numărul de comenzi intermediate de angajatul respectiv
+-- în cazul în care acesta este între 3 și 7, salariul angajatului va crește cu 10%
+-- în cazul în care acesta este mai mare decât 7, salariul angajatului va crește cu 20%
+-- altfel, salariul angajatului rămâne nemodificat
+-- se va opera modificarea salariului la nivelul tabelei
+-- la final, se va afișa salariul nou al angajatului respectiv
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_nr NUMBER;
+BEGIN
+    v_id_angajat := &id_angajat;
+    SELECT salariul,nume INTO v_salariu, v_nume
+    FROM angajati
+    WHERE id_angajat = v_id_angajat;
+    
+    dbms_output.put_line(v_nume || ' are salariul ' || v_salariu);
+    SELECT COUNT(id_comanda) INTO v_nr
+    FROM comenzi
+    WHERE id_angajat = v_id_angajat;
+    dbms_output.put_line('Nr comenzi: ' || v_nr);
+    
+    CASE 
+        WHEN v_nr BETWEEN 3 AND 7 THEN
+            v_salariu := v_salariu * 1.1;
+        WHEN v_nr > 7 THEN
+            v_salariu := v_salariu * 1.2;
+        ELSE NULL;
+    END CASE;
+    
+    UPDATE angajati
+    SET salariul = v_salariu
+    WHERE id_angajat = v_id_angajat
+    RETURNING salariul INTO v_salariu;
+    
+    DBMS_OUTPUT.put_line('Salariul angajatului cu id-ul ' || v_id_angajat || ': ' || v_salariu);
+    
+END;
+/
+
+-- 2. Într-un bloc PL/SQL să se parcurgă toți angajații cu id_angajat de la 100 la 120, afișând numele, salariul și vechimea.
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+BEGIN
+    FOR i IN 100..120 LOOP
+        SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+        INTO v_salariu, v_nume, v_vechime
+        FROM angajati
+        WHERE id_angajat = i;
+            
+        DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+    END LOOP;
+END;
+/
+
+
+-- 3. Într-un bloc PL/SQL să se parcurgă toți angajații, folosind pe rând structurile: FOR-LOOP, WHILE-LOOP, LOOP-EXIT WHEN
+
+--FOR-LOOP
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+BEGIN
+    FOR i IN 100..120 LOOP
+        SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+        INTO v_salariu, v_nume, v_vechime
+        FROM angajati
+        WHERE id_angajat = i;
+            
+        DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+    END LOOP;
+END;
+/
+
+--LOOP-EXIT
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+    i NUMBER;
+BEGIN
+    i:= 100;
+    LOOP
+        SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+        INTO v_salariu, v_nume, v_vechime
+        FROM angajati
+        WHERE id_angajat = i;
+        i := i +1;
+        EXIT WHEN i = 121;
+        DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+    END LOOP;
+            
+END;
+/
+
+
+--WHILE-LOOP
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+    i NUMBER;
+BEGIN
+    i:= 100;
+    WHILE i < 120
+    LOOP
+        SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+        INTO v_salariu, v_nume, v_vechime
+        FROM angajati
+        WHERE id_angajat = i;
+        i := i +1;
+        DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+    END LOOP;
+            
+END;
+/
+
+--Sa se selecteze toti angajatii
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+    v_min NUMBER;
+    v_max NUMBER;
+BEGIN
+    SELECT MIN(id_angajat), MAX(id_angajat) INTO v_min, v_max
+    FROM angajati;
+    FOR i IN v_min..v_max LOOP
+        SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+        INTO v_salariu, v_nume, v_vechime
+        FROM angajati
+        WHERE id_angajat = i;
+            
+        DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+    END LOOP;
+END;
+/
+
+-- 4. Printr-o comandă SQL simplă, să se șteargă angajatul cu id_angajat 150
+DELETE FROM angajati WHERE id_angajat = 150;
+
+
+-- 5. Într-un bloc PL/SQL să se parcurgă toți angajații, folosind pe rând structurile: FOR-LOOP, WHILE-LOOP, LOOP-EXIT WHEN
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    v_id_angajat angajati.id_angajat%TYPE;
+    v_nume angajati.nume%TYPE;
+    v_salariu angajati.salariul%TYPE;
+    v_vechime NUMBER(4,2);
+    v_min NUMBER;
+    v_max NUMBER;
+    v_nr NUMBER;
+BEGIN
+    SELECT MIN(id_angajat), MAX(id_angajat) INTO v_min, v_max
+    FROM angajati;
+    FOR i IN v_min..v_max LOOP
+        SELECT COUNT(id_angajat) INTO v_nr
+        FROM angajati
+        WHERE id_angajat = i;
+        
+        IF v_nr=1 THEN 
+            SELECT salariul,nume, (SYSDATE-data_angajare)/365 
+            INTO v_salariu, v_nume, v_vechime
+            FROM angajati
+            WHERE id_angajat = i;
+                
+            DBMS_output.put_line(i || '-' || v_nume || ' are salariul ' || v_salariu || ' si vechimea ' || v_vechime);
+        ELSE 
+            DBMS_output.put_line(i || ' nu exista');
+        END IF;
+    END LOOP;
+END;
+/
+
+

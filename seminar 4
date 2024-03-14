@@ -1,0 +1,127 @@
+--1. Printr-un bloc PL/SQL, să se atribuie comision angajaților din departamentul al cărui id este citit de la tastatură. 
+--Să se afișeze numărul de modificări totale efectuate.
+--
+--2. Construiți un bloc PL/SQL prin care să se afișeze informații despre angajații din orașul Toronto.
+--
+--3. Construiți un bloc PL/SQL prin care să se afișeze primele 3 comenzi care au cele mai multe produse comandate.
+--
+--4. Construiți un bloc PL/SQL prin care să se afișeze, pentru fiecare departament, valoarea totală a salariilor plătite angajaților.
+--
+--5. Construiți un bloc PL/SQL prin care să se afișeze informații despre angajați, precum și numărul de comenzi intermediate de fiecare.
+--
+--6. Construiți un bloc PL/SQL prin care să se afișeze pentru fiecare departament (id și nume) informații despre angajații aferenți (id, nume, salariu). Să se afișeze la nivelul fiecărui departament și salariul total plătit.
+--Informațiile vor fi afișate în următoarea manieră:
+
+--*departament A
+--******angajat 1
+--******angajat 2
+--Total salarii A: ...
+--
+--* departament B
+--******angajat 5
+--******angajat 6
+--******angajat 7
+--Total salarii B: ...
+
+--1.
+SET SERVEROUTPUT ON;
+DECLARE
+    v_id angajati.id_departament%TYPE := &v;
+BEGIN
+    UPDATE angajati 
+    SET comision = 0.1
+    WHERE id_departament = v_id;
+    
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Fara modificari!');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(SQL%ROWCOUNT || ' modificari.');
+    END IF;
+END;
+/
+
+--2.
+SELECT nume, salariul, oras 
+FROM angajati JOIN departamente USING (id_departament)
+    JOIN locatii USING (id_locatie)
+WHERE UPPER(oras) = 'TORONTO';
+
+-- sau:
+
+SELECT nume,salariul,oras
+FROM angajati a, departamente d, locatii l
+WHERE a.id_departament = d.id_departament AND
+d.id_locatie = l.id_locatie AND
+UPPER(l.oras) = 'TORONTO'
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    --declarare cursor explicit
+    CURSOR c IS SELECT nume, salariul, oras 
+        FROM angajati JOIN departamente USING (id_departament)
+            JOIN locatii USING (id_locatie)
+        WHERE UPPER(oras) = 'TORONTO';
+    v c%ROWTYPE;
+BEGIN
+    --deschidere cursor
+    OPEN c;
+    --parcurgere cursor
+    LOOP
+        FETCH c INTO v;
+        EXIT WHEN c%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('Angajat toronto: ' || v.nume);
+    END LOOP;
+    CLOSE c;
+END;
+/
+
+--3.
+--COUNT(id_produs)
+SELECT id_comanda, data, COUNT(id_produs)
+FROM comenzi JOIN rand_comenzi USING (id_comanda)
+GROUP BY id_comanda, data
+ORDER BY COUNT(id_produs) DESC
+FETCH FIRST 3 ROWS ONLY;
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    --declarare cursor explicit
+    CURSOR c IS SELECT id_comanda, data, COUNT(id_produs) nr_produse
+            FROM comenzi JOIN rand_comenzi USING (id_comanda)
+            GROUP BY id_comanda, data
+            ORDER BY COUNT(id_produs) DESC
+            FETCH FIRST 3 ROWS ONLY;
+BEGIN
+    FOR v IN c
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('id comanda: ' || v.id_comanda || ' numar produse: ' || v.nr_produse);
+    END LOOP;
+
+END;
+/
+
+--4.
+
+SELECT SUM(salariul) total, id_departament,denumire_departament
+FROM angajati JOIN departamente USING (id_departament)
+GROUP BY id_departament,denumire_departament;
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+    --declarare cursor explicit
+    CURSOR c IS SELECT SUM(salariul) total, id_departament,denumire_departament
+                FROM angajati JOIN departamente USING (id_departament)
+                GROUP BY id_departament,denumire_departament;
+BEGIN
+    FOR v IN c
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('total salarii: ' || v.total || ' id departament: ' || v.id_departament);
+    END LOOP;
+
+END;
+/
+
